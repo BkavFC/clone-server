@@ -18,7 +18,6 @@ check_domain() {
 while true; do
   read -p "Vui long nhap ten domain ban muon cai dat: " domain
   if check_domain "$domain"; then
-    #echo -e "\033[1;33mBan da nhap domain: $domain\033[0m"
     break;
   fi
 done
@@ -46,9 +45,9 @@ while true; do
         ;;
 esac
 done
-#echo -e "\033[1;33mPhien ban PHP cai dat: $version_php\033[0m"
 mysql_user="${domain%%.*}"
-mysql_pass=`openssl rand -base64 12`
+mysql_pass=`openssl rand -base64 8`
+mysql_pass_root=`openssl rand -base64 16`
 mysql_database="${domain%%.*}"
 api_storage="https://storage.job3s.vn"
 #access_key="2jic3LO7nv1D8ijaOZWQ"
@@ -75,14 +74,14 @@ curl -Lso- https://raw.githubusercontent.com/nhanhoadocs/ghichep-cmdlog/master/c
 ufw allow 80 >> /dev/null
 ufw allow 443 >> /dev/null
 ufw allow 22 >> /dev/null
-expect -c 'set timeout 2; spawn ufw enable; expect "Command may disrupt existing ssh connections. Proceed with operation (y|n)?"; send "y\n"; interact'
+expect -c 'set timeout 2; spawn ufw enable; expect "Command may disrupt existing ssh connections. Proceed with operation (y|n)?"; send "y\n"; interact' >> /dev/null
 systemctl restart ufw
 #2.1.install redis
 apt-get install redis-server -y >> /dev/null
 systemctl enable redis-server
 systemctl restart redis-server
 pid_redis=`systemctl status redis-server | grep "Main PID" | awk '{print $3}'`
-echo -e "\033[0;32m(1/4) Cai dat thanh cong Redis. PID running: $pid_redis\033[0m"
+echo -e "\033[0;32m(1/5) Cai dat thanh cong Redis. PID running: $pid_redis\033[0m"
 #2.1.install php
 apt-get install software-properties-common -y >> /dev/null
 expect -c 'set timeout 2; spawn add-apt-repository ppa:ondrej/php; expect "Press \[ENTER\] to continue or Ctrl-c to cancel adding it."; send "\r"; interact' >> /dev/null
@@ -90,16 +89,36 @@ apt-get install php$version_php-cli php$version_php-fpm php$version_php-mbstring
 systemctl enable php$version_php-fpm
 systemctl restart php$version_php-fpm
 pid_php_fpm=`systemctl status php$version_php-fpm | grep "Main PID" | awk '{print $3}'`
-echo -e "\033[0;32m(2/4) Cai dat thanh cong php$version_php-fpm. PID running: $pid_php_fpm\033[0m"
+echo -e "\033[0;32m(2/5) Cai dat thanh cong php$version_php-fpm. PID running: $pid_php_fpm\033[0m"
 #2.2.install mysql
-#apt-get install mysql-server -y >> /dev/null
-#expect auto_fill_mysql_config.sh
-#mv /etc/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf.ori
-#mv /root/mysqld.cnf /etc/mysql/mysql.conf.d/
-#systemctl enable mysql
-#systemctl restart mysql
-#pid_mysql_server=`systemctl status mysql | grep "Main PID" | awk '{print $3}'`
-#echo -e "\033[0;32m(3/6) Cai dat thanh cong mysql-8. PID running: $pid_mysql_server\033[0m"
+apt-get install mysql-server -y >> /dev/null
+expect -c  'set timeout 2;
+            spawn mysql_secure_installation;
+            expect "Press y|Y for Yes, any other key for No:";
+            send "n\n";
+            expect "Remove anonymous users? (Press y|Y for Yes, any other key for No) :";
+            send "y\n";
+            expect "Disallow root login remotely? (Press y|Y for Yes, any other key for No) :";
+            send "n\n";
+            expect "Remove test database and accescs to it? (Press y|Y for Yes, any other key for No) :";
+            send "y\n";
+            expect "Reload privilege tables now? (Press y|Y for Yes, any other key for No) :";
+            send "y\n";
+            interact' >> /dev/null
+mv /etc/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf.ori
+mc cp minio/config/mysqld.cnf /etc/mysql/mysql.conf.d/
+mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY `$mysql_pass_root`"
+mysql -u root -e "create database `$mysql_database`"
+mysql -u root -e "CREATE USER `$mysql_user`@'%' IDENTIFIED BY '$mysql_pass'"
+mysql -u root -e "GRANT SELECT ON DATABASE::`$mysql_database` TO `$mysql_user`"
+mysql -u root -e "GRANT INSERT ON DATABASE::`$mysql_database` TO `$mysql_user`"
+mysql -u root -e "GRANT UPDATE ON DATABASE::`$mysql_database` TO `$mysql_user`"
+mysql -u root -e "GRANT DELETE ON DATABASE::`$mysql_database` TO `$mysql_user`"
+mysql -u root -e "FLUSH PRIVILEGES"
+systemctl enable mysql
+systemctl restart mysql
+pid_mysql_server=`systemctl status mysql | grep "Main PID" | awk '{print $3}'`
+echo -e "\033[0;32m(3/5) Cai dat thanh cong mysql-8. PID running: $pid_mysql_server\033[0m"
 #2.3.install nginx
 apt-get update >> /dev/null
 apt-get upgrade -y  >> /dev/null
@@ -113,18 +132,26 @@ sed -i "s/domain/$domain/g" /etc/nginx/conf.d/domain.conf
 sed -i "s/version_php/$version_php/g" domain.conf
 mv /root/domain.conf /etc/nginx/conf.d/$domain.conf
 #cp /root/$domain.* /etc/nginx/ssl_cert/$domain/
+systemctl restart nginx
+pid_nginx=`systemctl status nginx | grep "Main PID" | awk '{print $3}'`
+echo -e "\033[0;32m(4/5) Cai dat thanh cong nginx. PID running: $pid_nginx\033[0m"
+#3.1.restore database
+mc cp minio/source/sql.zip /tmp/
+cd /tmp/ && unzip sql.zip >> /dev/null
+mysql -u "$mysql_user" --password="$mysql_pass" "$mysql_database" < /tmp/*.sql
 #3.2.unzip source code
-echo -e "\033[0;32m(3/4) Updating data...............\033[0m"
+echo -e "\033[0;32m(4/4) Dang cap nhat du lieu...............\033[0m"
 mkdir -p /var/www/html/
 mc cp minio/source/source.zip /var/www/html/
 cd /var/www/html && unzip source.zip >> /dev/null
 cd /var/www/html && rm -rf source.zip
 cd /var/www/html && mv source $domain
-cd /var/www/html/$doamin && sed -i "s/domain/$domain/g" /tmp/.env
-cd /var/www/html/$doamin && sed -i "s/mysql_user/$mysql_user/g" /tmp/.env
-cd /var/www/html/$doamin && sed -i "s/mysql_pass/$mysql_pass/g" /tmp/.env
-cd /var/www/html/$doamin && sed -i "s/mysql_database/$mysql_database/g" /tmp/.env
-rm -rf /var/www/html/$domain/.env && mv /tmp/.env /var/www/html/$domain/
+rm -rf /var/www/html/$domain/.env
+mc cp minio/config/.env /var/www/html/$domain/
+cd /var/www/html/$doamin && sed -i "s/domain/$domain/g" /var/www/html/$domain/.env
+cd /var/www/html/$doamin && sed -i "s/mysql_user/$mysql_user/g" /var/www/html/$domain/.env
+cd /var/www/html/$doamin && sed -i "s/mysql_pass/$mysql_pass/g" /var/www/html/$domain/.env
+cd /var/www/html/$doamin && sed -i "s/mysql_database/$mysql_database/g" /var/www/html/$domain/.env
 cd /var/www/html/$domain/ && rm -rf bootstrap/cache
 cd /var/www/html/$domain/ && mkdir -p bootstrap/cache
 cd /var/www/html/$domain/ && chmod -R 777 bootstrap/cache
@@ -132,12 +159,11 @@ cd /var/www/html/$domain/ && chmod -R 777 strorage
 cd /var/www/html/$domain/ && php artisan cache:clear
 cd /var/www/html/$domain/ && php artisan optimize
 cd /var/www/html/$domain/ && php artisan route:clear
+echo -e "\033[0;32m(4/4) Cap nhat du lieu thanh cong\033[0m"
 systemctl restart nginx
 pid_nginx=`systemctl status nginx | grep "Main PID" | awk '{print $3}'`
-echo -e "\033[0;32m(3/4) Cai dat thanh cong nginx. PID running: $pid_nginx\033[0m"
 ip_public=`curl -s ifconfig.me`
 date1=$(date '+%Y%m%d_%H%M')
-echo -e "\033[0;32m(4/4) Update data thanh cong\033[0m"
 touch /tmp/$ip_public_$date1.log
 echo "Thong tin cai dat domain $domain" >> /tmp/$ip_public_$date1.log
 echo "IP Public = $ip_public" >> /tmp/$ip_public_$date1.log
