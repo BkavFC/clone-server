@@ -51,6 +51,8 @@ mysql_user="${domain%%.*}"
 mysql_pass=`openssl rand -base64 12`
 mysql_database="${domain%%.*}"
 api_storage="https://storage.job3s.vn"
+#access_key="2jic3LO7nv1D8ijaOZWQ"
+#secrect_key="ubuHqhZkTwLvux8Tqp2qffT6WOQxLUONIcGTOEdK"
 read -p "Nhap Access Key duoc cung cap: " access_key
 read -p "Nhap Secrect Key duoc cung cap: " secrect_key
 echo -e "\033[1;33mDang kiem tra Key...\033[0m"
