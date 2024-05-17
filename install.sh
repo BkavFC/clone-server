@@ -46,9 +46,9 @@ while true; do
 esac
 done
 date0=$(date '+%Y%m%d_%H%M')
-mysql_user="${domain%%.*}_$date0"
+mysql_user=`echo "${domain//./_}"`
 mysql_pass=`openssl rand -base64 8`
-mysql_database="${domain%%.*}_$date0"
+mysql_database=`echo "${domain//./_}"`
 api_storage="https://storage.job3s.vn"
 read -p "Nhap Access Key duoc cung cap: " access_key
 read -p "Nhap Secrect Key duoc cung cap: " secrect_key
@@ -139,6 +139,7 @@ expect -c  'set timeout 5;
             expect "Select the appropriate number \[1-2\] then \[enter\] (press 'c' to cancel):";
             send "2\n";
             interact' >> /dev/null
+(echo "0 12 1 * * /usr/bin/certbot renew --quiet") | crontab -
 systemctl reload nginx
 #3.1.restore database
 mc cp minio/source/sql.zip /tmp/
