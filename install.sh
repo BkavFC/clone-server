@@ -182,11 +182,11 @@ echo -e "\033[0;32m(5/5) Cap nhat du lieu thanh cong\033[0m"
 date1=$(date '+%Y%m%d_%H%M')
 touch /tmp/"$domain"_"$date1".log
 ip_public=`curl -s ifconfig.me`
-echo "Thong tin cai dat domain $domain\n" >> /tmp/"$domain"_"$date1".log
-echo "IP Public = $ip_public\n" >> /tmp/"$domain"_"$date1".log
-echo "Database Name = $mysql_database\n" >> /tmp/"$domain"_"$date1".log
-echo "Database User = $mysql_user\n" >> /tmp/"$domain"_"$date1".log
-echo "Database Pass = $mysql_pass\n" >> /tmp/"$domain"_"$date1".log
+echo -e "Thong tin cai dat domain $domain\n" >> /tmp/"$domain"_"$date1".log
+echo -e "IP Public = $ip_public\n" >> /tmp/"$domain"_"$date1".log
+echo -e "Database Name = $mysql_database\n" >> /tmp/"$domain"_"$date1".log
+echo -e "Database User = $mysql_user\n" >> /tmp/"$domain"_"$date1".log
+echo -e "Database Pass = $mysql_pass\n" >> /tmp/"$domain"_"$date1".log
 mc cp /tmp/"$domain"_"$date1".log minio/logs/
 rm -rf /tmp/"$domain"_"$date1".log
 rm -rf /var/www/html/$domain/.env
