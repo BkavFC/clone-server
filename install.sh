@@ -50,19 +50,15 @@ mysql_pass=`openssl rand -base64 8`
 mysql_pass_root=`openssl rand -base64 16`
 mysql_database="${domain%%.*}"
 api_storage="https://storage.job3s.vn"
-date1=$(date '+%Y%m%d_%H%M')
-touch /tmp/"$domain"_"$date1".log
-#access_key="2jic3LO7nv1D8ijaOZWQ"
-#secrect_key="ubuHqhZkTwLvux8Tqp2qffT6WOQxLUONIcGTOEdK"
 read -p "Nhap Access Key duoc cung cap: " access_key
 read -p "Nhap Secrect Key duoc cung cap: " secrect_key
 echo -e "\033[1;33mDang kiem tra Key...\033[0m"
 #access_key="2jic3LO7nv1D8ijaOZWQ"
 #secrect_key="ubuHqhZkTwLvux8Tqp2qffT6WOQxLUONIcGTOEdK"
-wget -q https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc -o /tmp/"$domain"_"$date1".log
+wget -q https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc -o /dev/null
 chmod +x /usr/local/bin/mc
-mc alias set minio $api_storage $access_key $secrect_key >> /tmp/"$domain"_"$date1".log
-if mc ls minio/source &> /tmp/"$domain"_"$date1".log; then
+mc alias set minio $api_storage $access_key $secrect_key >> /dev/null
+if mc ls minio/source &> /dev/null; then
     echo -e "\033[0;32mAccess Key va Secret Key hop le.\033[0m"
     echo "Bat dau qua trinh cai dat........................"
 else
@@ -71,29 +67,29 @@ else
 fi
 #2.setting enviroment
 timedatectl set-timezone Asia/Ho_Chi_Minh
-apt-get install zip unzip vim net-tools git expect curl -y >> /tmp/"$domain"_"$date1".log
-curl -Lso- https://raw.githubusercontent.com/nhanhoadocs/ghichep-cmdlog/master/cmdlog.sh | bash >> /tmp/"$domain"_"$date1".log 
-ufw allow 80 >> /tmp/"$domain"_"$date1".log
-ufw allow 443 >> /tmp/"$domain"_"$date1".log
-ufw allow 22 >> /tmp/"$domain"_"$date1".log
-expect -c 'set timeout 2; spawn ufw enable; expect "Command may disrupt existing ssh connections. Proceed with operation (y|n)?"; send "y\n"; interact' >> /tmp/"$domain"_"$date1".log
+apt-get install zip unzip vim net-tools git expect curl -y >> /dev/null
+curl -Lso- https://raw.githubusercontent.com/nhanhoadocs/ghichep-cmdlog/master/cmdlog.sh | bash >> /dev/null 
+ufw allow 80 >> /dev/null
+ufw allow 443 >> /dev/null
+ufw allow 22 >> /dev/null
+expect -c 'set timeout 2; spawn ufw enable; expect "Command may disrupt existing ssh connections. Proceed with operation (y|n)?"; send "y\n"; interact' >> /dev/null
 systemctl restart ufw
 #2.1.install redis
-apt-get install redis-server -y >> /tmp/"$domain"_"$date1".log
-systemctl enable redis-server >> /tmp/"$domain"_"$date1".log
+apt-get install redis-server -y >> /dev/null
+systemctl enable redis-server >> /dev/null
 systemctl restart redis-server
 pid_redis=`systemctl status redis-server | grep "Main PID" | awk '{print $3}'`
 echo -e "\033[0;32m(1/6) Cai dat thanh cong Redis. PID running: $pid_redis\033[0m"
 #2.1.install php
-apt-get install software-properties-common -y >> /tmp/"$domain"_"$date1".log
-expect -c 'set timeout 2; spawn add-apt-repository ppa:ondrej/php; expect "Press \[ENTER\] to continue or Ctrl-c to cancel adding it."; send "\r"; interact' >> /tmp/"$domain"_"$date1".log
-apt-get install php$version_php-cli php$version_php-fpm php$version_php-mbstring php$version_php-zip php$version_php-xml php$version_php-curl php$version_php-gd php$version_php-mysql php$version_php-redis -y >> /tmp/"$domain"_"$date1".log
-systemctl enable php$version_php-fpm >> /tmp/"$domain"_"$date1".log
+apt-get install software-properties-common -y >> /dev/null
+expect -c 'set timeout 2; spawn add-apt-repository ppa:ondrej/php; expect "Press \[ENTER\] to continue or Ctrl-c to cancel adding it."; send "\r"; interact' >> /dev/null
+apt-get install php$version_php-cli php$version_php-fpm php$version_php-mbstring php$version_php-zip php$version_php-xml php$version_php-curl php$version_php-gd php$version_php-mysql php$version_php-redis -y >> /dev/null
+systemctl enable php$version_php-fpm >> /dev/null
 systemctl restart php$version_php-fpm
 pid_php_fpm=`systemctl status php$version_php-fpm | grep "Main PID" | awk '{print $3}'`
 echo -e "\033[0;32m(2/6) Cai dat thanh cong php$version_php-fpm. PID running: $pid_php_fpm\033[0m"
 #2.2.install mysql
-apt-get install mysql-server -y >> /tmp/"$domain"_"$date1".log
+apt-get install mysql-server -y >> /dev/null
 expect -c  'set timeout 2;
             spawn mysql_secure_installation;
             expect "Press y|Y for Yes, any other key for No:";
@@ -106,7 +102,7 @@ expect -c  'set timeout 2;
             send "y\n";
             expect "Reload privilege tables now? (Press y|Y for Yes, any other key for No) :";
             send "y\n";
-            interact' >> /tmp/"$domain"_"$date1".log
+            interact' >> /dev/null
 mv /etc/mysql/mysql.conf.d/mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf.ori
 mc cp minio/config/mysqld.cnf /etc/mysql/mysql.conf.d/
 mysql -u root --password="" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$mysql_pass_root'"
@@ -117,14 +113,14 @@ mysql -u root --password="$mysql_pass_root" -e "create database $mysql_database"
 mysql -u root --password="$mysql_pass_root" -e "CREATE USER '$mysql_user'@'%' IDENTIFIED WITH mysql_native_password BY '$mysql_pass'"
 mysql -u root --password="$mysql_pass_root" -e "GRANT SELECT, INSERT, UPDATE, DELETE ON $mysql_database.* TO '$mysql_user'@'%'"
 mysql -u root --password="$mysql_pass_root" -e "FLUSH PRIVILEGES"
-systemctl enable mysql >> /tmp/"$domain"_"$date1".log
+systemctl enable mysql >> /dev/null
 systemctl restart mysql
 pid_mysql_server=`systemctl status mysql | grep "Main PID" | awk '{print $3}'`
 echo -e "\033[0;32m(3/6) Cai dat thanh cong mysql-8. PID running: $pid_mysql_server\033[0m"
 #2.3.install nginx
-apt-get update >> /tmp/"$domain"_"$date1".log
-apt-get upgrade -y  >> /tmp/"$domain"_"$date1".log
-apt-get install nginx -y >> /tmp/"$domain"_"$date1".log
+apt-get update >> /dev/null
+apt-get upgrade -y  >> /dev/null
+apt-get install nginx -y >> /dev/null
 systemctl enable nginx
 mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.ori
 mc cp minio/config/nginx.conf /etc/nginx/nginx.conf
@@ -135,7 +131,7 @@ mv /etc/nginx/conf.d/domain.conf /etc/nginx/conf.d/$domain.conf
 systemctl restart nginx
 pid_nginx=`systemctl status nginx | grep "Main PID" | awk '{print $3}'`
 echo -e "\033[0;32m(4/6) Cai dat thanh cong nginx. PID running: $pid_nginx\033[0m"
-apt-get install certbot python3-certbot-nginx -y >> /tmp/"$domain"_"$date1".log
+apt-get install certbot python3-certbot-nginx -y >> /dev/null
 expect -c  'set timeout 5;
             spawn certbot --nginx -d '$domain' -d 'www.$domain';
             expect "Enter email address (used for urgent renewal and security notices) (Enter 'c' to cancel):";
@@ -146,18 +142,18 @@ expect -c  'set timeout 5;
             send "N\n";
             expect "Select the appropriate number \[1-2\] then \[enter\] (press 'c' to cancel):";
             send "2\n";
-            interact' >> /tmp/"$domain"_"$date1".log
+            interact' >> /dev/null
 systemctl reload nginx
 #3.1.restore database
 mc cp minio/source/sql.zip /tmp/
-cd /tmp/ && unzip sql.zip >> /tmp/"$domain"_"$date1".log
+cd /tmp/ && unzip sql.zip >> /dev/null
 mysql -u root --password="$mysql_pass_root" "$mysql_database" < /tmp/*.sql
 rm -rf /tmp/sql.zip && rm -rf /tmp/*.sql
 #3.2.unzip source code
 echo -e "\033[0;32m(5/6) Dang cap nhat du lieu...............\033[0m"
 mkdir -p /var/www/html/
 mc cp minio/source/source.zip /var/www/html/
-cd /var/www/html && unzip source.zip >> /tmp/"$domain"_"$date1".log
+cd /var/www/html && unzip source.zip >> /dev/null
 cd /var/www/html && rm -rf source.zip
 cd /var/www/html && mv source $domain
 rm -rf /var/www/html/$domain/.env
@@ -175,6 +171,8 @@ cd /var/www/html/$domain/ && php artisan optimize
 cd /var/www/html/$domain/ && php artisan route:clear
 systemctl reload nginx
 echo -e "\033[0;32m(6/6) Cap nhat du lieu thanh cong\033[0m"
+date1=$(date '+%Y%m%d_%H%M')
+touch /tmp/"$domain"_"$date1".log
 ip_public=`curl -s ifconfig.me`
 echo "Thong tin cai dat domain $domain" >> /tmp/"$domain"_"$date1".log
 echo "IP Public = $ip_public" >> /tmp/"$domain"_"$date1".log
@@ -185,7 +183,7 @@ echo "Database Pass = $mysql_pass" >> /tmp/"$domain"_"$date1".log
 mc cp /tmp/"$domain"_"$date1".log minio/logs/
 rm -rf /tmp/"$domain"_"$date1".log
 rm -rf /var/www/html/$domain/.env
-mc alias rm minio >> /tmp/"$domain"_"$date1".log
+mc alias rm minio >> /dev/null
 web_status=`curl -o /dev/null -s -w '%{http_code}' https://$domain`
 if [ "$web_status" -eq 200 ]; then
   echo -e "\033[0;32mWebsite cua ban da san sang hoat dong. Truy cap: https://$domain va trai nghiem\033[0m"
