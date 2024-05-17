@@ -53,8 +53,6 @@ api_storage="https://storage.job3s.vn"
 read -p "Nhap Access Key duoc cung cap: " access_key
 read -p "Nhap Secrect Key duoc cung cap: " secrect_key
 echo -e "\033[1;33mDang kiem tra Key...\033[0m"
-#access_key="2jic3LO7nv1D8ijaOZWQ"
-#secrect_key="ubuHqhZkTwLvux8Tqp2qffT6WOQxLUONIcGTOEdK"
 wget -q https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc -o /dev/null
 chmod +x /usr/local/bin/mc
 mc alias set minio $api_storage $access_key $secrect_key >> /dev/null
